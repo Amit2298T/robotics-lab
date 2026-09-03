@@ -1,8 +1,19 @@
 import {
   MotorModel,
+  type Collider,
   type RevoluteImpulseJoint,
   type RigidBody,
+  type World,
 } from "@dimforge/rapier3d-compat";
+
+import { castDistanceRay } from "./distanceSensor";
+import { BumperContactTracker } from "./bumperSensor";
+import {
+  computeOdometry,
+  createOdometryReference,
+  type OdometryReference,
+} from "./odometry";
+import { robotConfig } from "./robot.config";
 
 /*
  * The wheel colliders sit very close to the chassis collider. Contacts between
@@ -33,31 +44,60 @@ const wakeJointBodies = (
 
 import type {
   RobotAdapter,
+  RobotOdometry,
   RobotPose,
   WheelVelocityCommand,
 } from "@/simulation/types/robot.types";
 
 export class SimulationAdapter implements RobotAdapter {
+  private readonly bumperContacts = new BumperContactTracker();
+  private readonly bumperHitListeners = new Set<() => void>();
+  private odometryReference: OdometryReference = {
+    x: 0,
+    z: 0,
+    heading: 0,
+  };
+  private world: World | null = null;
   private chassis: RigidBody | null = null;
+
+  private leftWheel: RigidBody | null = null;
+  private rightWheel: RigidBody | null = null;
 
   private leftJoint: RevoluteImpulseJoint | null = null;
   private rightJoint: RevoluteImpulseJoint | null = null;
 
   attachBodies(
+    world: World,
     chassis: RigidBody,
+    leftWheel: RigidBody,
+    rightWheel: RigidBody,
     leftJoint: RevoluteImpulseJoint,
     rightJoint: RevoluteImpulseJoint,
   ) {
+    this.world = world;
     this.chassis = chassis;
+    this.leftWheel = leftWheel;
+    this.rightWheel = rightWheel;
     this.leftJoint = leftJoint;
     this.rightJoint = rightJoint;
+
+    this.bumperContacts.setInternalBodyHandles([
+      chassis.handle,
+      leftWheel.handle,
+      rightWheel.handle,
+    ]);
+    this.resetOdometry();
 
     configureWheelJoint(leftJoint);
     configureWheelJoint(rightJoint);
   }
 
   detachBodies() {
+    this.bumperContacts.setInternalBodyHandles([]);
+    this.world = null;
     this.chassis = null;
+    this.leftWheel = null;
+    this.rightWheel = null;
     this.leftJoint = null;
     this.rightJoint = null;
   }
@@ -125,6 +165,81 @@ export class SimulationAdapter implements RobotAdapter {
         w: rotation.w,
       },
     };
+  }
+
+  readDistanceSensor(): Promise<number> {
+    if (!this.world || !this.chassis || !this.leftWheel || !this.rightWheel) {
+      return Promise.resolve(robotConfig.distanceSensor.maxDistance);
+    }
+
+    return Promise.resolve(
+      castDistanceRay(
+        this.world,
+        {
+          chassis: this.chassis,
+          leftWheel: this.leftWheel,
+          rightWheel: this.rightWheel,
+        },
+        robotConfig.distanceSensor,
+      ),
+    );
+  }
+
+  beginBumperContact(collider: Collider, rigidBody: RigidBody | null): void {
+    const isNewValidContact = this.bumperContacts.beginContact({
+      colliderHandle: collider.handle,
+      rigidBodyHandle: rigidBody?.handle ?? null,
+      rigidBodyUserData: rigidBody?.userData,
+    });
+
+    if (isNewValidContact) {
+      for (const listener of this.bumperHitListeners) {
+        listener();
+      }
+    }
+  }
+
+  endBumperContact(collider: Collider): void {
+    this.bumperContacts.endContact(collider.handle);
+  }
+
+  clearBumperContacts(): void {
+    this.bumperContacts.clear();
+  }
+
+  readBumperSensor(): Promise<boolean> {
+    return Promise.resolve(this.bumperContacts.bumped);
+  }
+
+  subscribeBumperHits(listener: () => void): () => void {
+    this.bumperHitListeners.add(listener);
+    return () => this.bumperHitListeners.delete(listener);
+  }
+
+  resetOdometry(): void {
+    if (!this.chassis) {
+      this.odometryReference = { x: 0, z: 0, heading: 0 };
+      return;
+    }
+
+    this.odometryReference = createOdometryReference(
+      this.chassis.translation(),
+      this.chassis.rotation(),
+    );
+  }
+
+  readOdometry(): Promise<RobotOdometry> {
+    if (!this.chassis) {
+      return Promise.resolve({ x: 0, z: 0, heading: 0 });
+    }
+
+    return Promise.resolve(
+      computeOdometry(
+        this.chassis.translation(),
+        this.chassis.rotation(),
+        this.odometryReference,
+      ),
+    );
   }
 }
 

@@ -1,10 +1,15 @@
 "use client";
 
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
+import { BUMPER_IGNORED_USER_DATA_KEY } from "@/simulation/robot/bumperSensor";
 
 export default function Ground() {
   return (
-    <RigidBody type="fixed" colliders={false}>
+    <RigidBody
+      type="fixed"
+      colliders={false}
+      userData={{ [BUMPER_IGNORED_USER_DATA_KEY]: true }}
+    >
       <mesh
         position={[0, -0.1, 0]}
         receiveShadow

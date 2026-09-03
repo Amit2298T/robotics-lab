@@ -1,10 +1,24 @@
 "use client";
 
-import { CuboidCollider } from "@react-three/rapier";
+import {
+  CuboidCollider,
+  type CollisionEnterHandler,
+  type CollisionExitHandler,
+} from "@react-three/rapier";
 import { robotConfig } from "./robot.config";
 
-export default function RobotBody() {
+type RobotBodyProps = {
+  onBumperCollisionEnter: CollisionEnterHandler;
+  onBumperCollisionExit: CollisionExitHandler;
+};
+
+export default function RobotBody({
+  onBumperCollisionEnter,
+  onBumperCollisionExit,
+}: RobotBodyProps) {
   const [width, height, length] = robotConfig.chassis.size;
+  const [sensorX, sensorY, sensorZ] =
+    robotConfig.distanceSensor.originOffset;
 
   return (
     <>
@@ -28,7 +42,7 @@ export default function RobotBody() {
         />
       </mesh>
 
-      <mesh position={[0, 0.22, -0.38]}>
+      <mesh position={[sensorX, sensorY, sensorZ + 0.035]}>
         <boxGeometry args={[0.28, 0.06, 0.05]} />
 
         <meshStandardMaterial
@@ -42,6 +56,8 @@ export default function RobotBody() {
         args={[width / 2, height / 2, length / 2]}
         friction={0.8}
         restitution={0}
+        onCollisionEnter={onBumperCollisionEnter}
+        onCollisionExit={onBumperCollisionExit}
       />
     </>
   );

@@ -3,8 +3,10 @@
 import { useEffect, useRef } from "react";
 import {
   RigidBody,
+  useRapier,
   useRevoluteJoint,
 } from "@react-three/rapier";
+import { Line } from "@react-three/drei";
 
 import type {
   RevoluteImpulseJoint,
@@ -15,9 +17,11 @@ import RobotBody from "./RobotBody";
 import RobotWheel from "./RobotWheel";
 import { robotConfig } from "./robot.config";
 import { simulationAdapter } from "./SimulationAdapter";
+import { chassisPhysicsMetadata } from "./robotPhysicsMetadata";
 import { useSimulationStore } from "@/simulation/state/simulation.store";
 
 export default function DifferentialDriveRobot() {
+  const { world } = useRapier();
   const chassisRef =
     useRef<RapierRigidBody>(null!);
 
@@ -32,11 +36,16 @@ export default function DifferentialDriveRobot() {
       (state) => state.resetVersion,
     );
 
+  const debugPhysics = useSimulationStore(
+    (state) => state.debugPhysics,
+  );
+
   const {
     spawn,
     wheels,
     caster,
     chassis,
+    distanceSensor,
   } = robotConfig;
 
   const leftJoint = useRevoluteJoint(
@@ -78,7 +87,10 @@ export default function DifferentialDriveRobot() {
     }
 
     simulationAdapter.attachBodies(
+      world,
       chassisBody,
+      leftWheelRef.current,
+      rightWheelRef.current,
       leftMotor,
       rightMotor,
     );
@@ -86,7 +98,7 @@ export default function DifferentialDriveRobot() {
     return () => {
       simulationAdapter.detachBodies();
     };
-  }, [leftJoint, rightJoint]);
+  }, [leftJoint, rightJoint, world]);
 
   useEffect(() => {
     const chassisBody =
@@ -107,6 +119,7 @@ export default function DifferentialDriveRobot() {
     }
 
     simulationAdapter.stop();
+    simulationAdapter.clearBumperContacts();
 
     chassisBody.setTranslation(
       {
@@ -234,6 +247,8 @@ export default function DifferentialDriveRobot() {
       },
       true,
     );
+
+    simulationAdapter.resetOdometry();
   }, [
     resetVersion,
     spawn.position,
@@ -254,8 +269,40 @@ export default function DifferentialDriveRobot() {
         linearDamping={0.35}
         angularDamping={0.55}
         canSleep={false}
+        userData={chassisPhysicsMetadata}
       >
-        <RobotBody />
+        <RobotBody
+          onBumperCollisionEnter={({ other }) => {
+            simulationAdapter.beginBumperContact(
+              other.collider,
+              other.rigidBody ?? null,
+            );
+          }}
+          onBumperCollisionExit={({ other }) => {
+            simulationAdapter.endBumperContact(other.collider);
+          }}
+        />
+
+        {debugPhysics ? (
+          <Line
+            points={[
+              distanceSensor.originOffset,
+              [
+                distanceSensor.originOffset[0] +
+                  distanceSensor.localDirection[0] *
+                    distanceSensor.maxDistance,
+                distanceSensor.originOffset[1] +
+                  distanceSensor.localDirection[1] *
+                    distanceSensor.maxDistance,
+                distanceSensor.originOffset[2] +
+                  distanceSensor.localDirection[2] *
+                    distanceSensor.maxDistance,
+              ],
+            ]}
+            color="#38bdf8"
+            lineWidth={1.5}
+          />
+        ) : null}
 
         <mesh
           castShadow

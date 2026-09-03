@@ -1,9 +1,8 @@
 import { CommandEngine } from "./CommandEngine";
 import { robotConfig } from "@/simulation/robot/robot.config";
-import { simulationAdapter } from "@/simulation/robot/SimulationAdapter";
+import { robotAdapter } from "@/simulation/robot/activeRobotAdapter";
 
 export const commandEngine = new CommandEngine(
-  simulationAdapter,
+  robotAdapter,
   robotConfig.control,
 );
-

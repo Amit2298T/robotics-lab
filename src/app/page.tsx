@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+
 import HeroScene from "@/components/home/HeroScene";
 
 export default function HomePage() {
@@ -10,12 +12,16 @@ export default function HomePage() {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:64px_64px] opacity-20" />
 
       {/* Navigation */}
-      <header className="relative z-20 flex items-center justify-between px-8 py-6 lg:px-16">
-        <Link
-          href="/"
-          className="text-xl font-semibold tracking-[0.3em] text-white"
-        >
-          ROBOLAB
+      <header className="relative z-20 flex items-center justify-between px-8 py-5 lg:px-16">
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/roboforge-logo.png"
+            alt="RoboForge"
+            width={220}
+            height={80}
+            priority
+            className="h-12 w-auto object-contain"
+          />
         </Link>
 
         <nav className="hidden items-center gap-9 text-sm text-neutral-400 md:flex">
@@ -44,7 +50,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 grid min-h-[calc(100vh-96px)] items-center px-8 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:px-16">
+      <section className="relative z-10 grid min-h-[calc(100vh-88px)] items-center px-8 pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:px-16">
         {/* Left */}
         <div className="relative z-10 max-w-3xl">
           <p className="mb-7 text-xs font-medium uppercase tracking-[0.42em] text-blue-400">
@@ -82,7 +88,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Real 3D Hero */}
+        {/* 3D Hero */}
         <div className="relative hidden h-[680px] lg:block">
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/10 blur-[120px]" />
 
@@ -92,6 +98,7 @@ export default function HomePage() {
             <div className="pointer-events-none absolute left-8 top-8">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-blue-400 shadow-[0_0_14px_rgba(96,165,250,0.9)]" />
+
                 <span className="text-[10px] uppercase tracking-[0.35em] text-neutral-500">
                   Robot Online
                 </span>
@@ -105,7 +112,7 @@ export default function HomePage() {
                 </p>
 
                 <p className="mt-2 text-sm text-neutral-300">
-                  Interactive Robotics Unit
+                  RoboForge Simulation Unit
                 </p>
               </div>
 

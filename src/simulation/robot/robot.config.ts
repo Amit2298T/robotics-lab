@@ -29,4 +29,10 @@ export const robotConfig = {
     radius: 0.09,
     position: [0, -0.11, 0.42] as [number, number, number],
   },
+
+  distanceSensor: {
+    maxDistance: 5,
+    originOffset: [0, 0.12, -0.61] as [number, number, number],
+    localDirection: [0, 0, -1] as [number, number, number],
+  },
 } as const;

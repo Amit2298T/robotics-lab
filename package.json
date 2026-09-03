@@ -6,13 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "verify:sensor": "node --experimental-strip-types scripts/verify-distance-sensor.mjs",
+    "verify:bumper": "node --experimental-strip-types scripts/verify-bumper-sensor.mjs",
+    "verify:odometry": "node --experimental-strip-types scripts/verify-odometry.mjs",
+    "verify:controls": "node --experimental-strip-types scripts/verify-control-ownership.mjs",
+    "verify:challenge": "node --experimental-strip-types scripts/verify-challenge.mjs"
   },
   "dependencies": {
+    "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",
+    "@monaco-editor/react": "^4.7.0",
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
     "@react-three/rapier": "^2.2.0",
     "next": "16.3.4",
+    "quickjs-emscripten-core": "^0.32.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.185.1",
