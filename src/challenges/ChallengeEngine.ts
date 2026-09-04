@@ -25,26 +25,42 @@ const browserScheduler: ChallengeScheduler = {
 };
 
 export class ChallengeEngine {
-  private readonly definition: ChallengeDefinition;
+  private readonly challengeDefinitions: readonly ChallengeDefinition[];
   private readonly scheduler: ChallengeScheduler;
   private readonly onTerminal?: (snapshot: ChallengeSnapshot) => void;
   private readonly listeners = new Set<ChallengeListener>();
   private timer: TimerHandle | null = null;
   private runVersion = 0;
+  private nextRunId = 1;
   private currentSnapshot: ChallengeSnapshot;
 
   constructor(
-    definition: ChallengeDefinition,
+    definitions: readonly ChallengeDefinition[],
     options: ChallengeEngineOptions = {},
   ) {
-    this.definition = definition;
+    if (definitions.length === 0) {
+      throw new Error("ChallengeEngine requires at least one challenge.");
+    }
+
+    const challengeIds = new Set(definitions.map(({ id }) => id));
+    if (challengeIds.size !== definitions.length) {
+      throw new Error("Challenge IDs must be unique.");
+    }
+
+    this.challengeDefinitions = [...definitions];
     this.scheduler = options.scheduler ?? browserScheduler;
     this.onTerminal = options.onTerminal;
-    this.currentSnapshot = this.createIdleSnapshot();
+    this.currentSnapshot = this.createIdleSnapshot(
+      this.challengeDefinitions[0],
+    );
   }
 
   get snapshot(): ChallengeSnapshot {
     return this.currentSnapshot;
+  }
+
+  get definitions(): readonly ChallengeDefinition[] {
+    return this.challengeDefinitions;
   }
 
   subscribe(listener: ChallengeListener): () => void {
@@ -61,12 +77,16 @@ export class ChallengeEngine {
     this.runVersion += 1;
     const version = this.runVersion;
     const startedAt = this.scheduler.now();
+    const definition = this.currentSnapshot.definition;
+    const runId = this.nextRunId;
+    this.nextRunId += 1;
     this.currentSnapshot = {
-      definition: this.definition,
+      definition,
       status: "running",
       failureReason: null,
+      runId,
       startedAt,
-      deadline: startedAt + this.definition.timeLimitMs,
+      deadline: startedAt + definition.timeLimitMs,
       endedAt: null,
     };
 
@@ -74,7 +94,7 @@ export class ChallengeEngine {
       if (version === this.runVersion) {
         this.fail("timeout");
       }
-    }, this.definition.timeLimitMs);
+    }, definition.timeLimitMs);
     this.emit();
 
     return true;
@@ -91,7 +111,7 @@ export class ChallengeEngine {
   handleCollision(): void {
     if (
       this.currentSnapshot.status !== "running" ||
-      !this.definition.failOnCollision
+      !this.currentSnapshot.definition.failOnCollision
     ) {
       return;
     }
@@ -102,8 +122,30 @@ export class ChallengeEngine {
   reset(): void {
     this.runVersion += 1;
     this.clearActiveTimer();
-    this.currentSnapshot = this.createIdleSnapshot();
+    this.currentSnapshot = this.createIdleSnapshot(
+      this.currentSnapshot.definition,
+    );
     this.emit();
+  }
+
+  selectChallenge(challengeId: string): boolean {
+    const definition = this.challengeDefinitions.find(
+      ({ id }) => id === challengeId,
+    );
+
+    if (!definition) {
+      return false;
+    }
+
+    if (definition.id === this.currentSnapshot.definition.id) {
+      return false;
+    }
+
+    this.runVersion += 1;
+    this.clearActiveTimer();
+    this.currentSnapshot = this.createIdleSnapshot(definition);
+    this.emit();
+    return true;
   }
 
   private fail(reason: ChallengeFailureReason): void {
@@ -137,11 +179,14 @@ export class ChallengeEngine {
     }
   }
 
-  private createIdleSnapshot(): ChallengeSnapshot {
+  private createIdleSnapshot(
+    definition: ChallengeDefinition,
+  ): ChallengeSnapshot {
     return {
-      definition: this.definition,
+      definition,
       status: "idle",
       failureReason: null,
+      runId: null,
       startedAt: null,
       deadline: null,
       endedAt: null,

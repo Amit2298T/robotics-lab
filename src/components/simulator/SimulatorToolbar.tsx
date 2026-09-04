@@ -13,6 +13,7 @@ import {
 import { challengeEngine } from "@/challenges/activeChallengeEngine";
 import { commandRunner } from "@/simulation/commands/activeCommandRunner";
 import { programRuntime } from "@/runtime/activeProgramRuntime";
+import { behaviorRunner } from "@/behaviors/activeBehaviorRunner";
 import { useSimulationStore } from "@/simulation/state/simulation.store";
 
 import {
@@ -48,7 +49,10 @@ export default function SimulatorToolbar() {
   );
 
   useEffect(() => {
-    return () => commandRunner.cancel();
+    return () => {
+      behaviorRunner.stop();
+      commandRunner.cancel();
+    };
   }, []);
 
   const runDemo = async () => {
@@ -59,6 +63,8 @@ export default function SimulatorToolbar() {
     if (challengeEngine.snapshot.status === "running") {
       challengeEngine.reset();
     }
+
+    behaviorRunner.stop();
 
     const programOwnedRunner = programRuntime.stop();
 

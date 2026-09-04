@@ -8,22 +8,19 @@ import TestArena from "@/simulation/environment/TestArena";
 import TargetZone from "@/simulation/environment/TargetZone";
 import { useSimulationStore } from "@/simulation/state/simulation.store";
 import { challengeEngine } from "@/challenges/activeChallengeEngine";
-import { reachGoalChallenge } from "@/challenges/challenge.config";
+import type { ChallengeSnapshot } from "@/challenges/challenge.types";
 import { useEffect, useState } from "react";
 
 export default function SimulationWorld() {
-  const [challengeStatus, setChallengeStatus] = useState(
-    challengeEngine.snapshot.status,
-  );
+  const [challengeSnapshot, setChallengeSnapshot] =
+    useState<ChallengeSnapshot>(challengeEngine.snapshot);
   const debugPhysics = useSimulationStore(
     (state) => state.debugPhysics,
   );
 
   useEffect(
     () =>
-      challengeEngine.subscribe((snapshot) => {
-        setChallengeStatus(snapshot.status);
-      }),
+      challengeEngine.subscribe(setChallengeSnapshot),
     [],
   );
 
@@ -36,8 +33,9 @@ export default function SimulationWorld() {
         <Ground />
         <TestArena />
         <TargetZone
-          targetZone={reachGoalChallenge.targetZone}
-          successful={challengeStatus === "success"}
+          key={challengeSnapshot.definition.id}
+          targetZone={challengeSnapshot.definition.targetZone}
+          successful={challengeSnapshot.status === "success"}
           onChassisEntered={() => challengeEngine.handleTargetReached()}
         />
         <DifferentialDriveRobot />

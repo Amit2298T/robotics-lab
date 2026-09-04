@@ -1,8 +1,10 @@
 import { commandEngine } from "@/simulation/commands/activeCommandEngine";
 import { commandRunner } from "@/simulation/commands/activeCommandRunner";
 import { programRuntime } from "@/runtime/activeProgramRuntime";
+import { behaviorRunner } from "@/behaviors/activeBehaviorRunner";
 
 function cancelAutomatedCommands() {
+  behaviorRunner.stop();
   const programOwnedRunner = programRuntime.stop();
 
   if (!programOwnedRunner) {

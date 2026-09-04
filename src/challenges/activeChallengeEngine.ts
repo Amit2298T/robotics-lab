@@ -3,9 +3,9 @@ import { robotAdapter } from "@/simulation/robot/activeRobotAdapter";
 import { programRuntime } from "@/runtime/activeProgramRuntime";
 
 import { ChallengeEngine } from "./ChallengeEngine";
-import { reachGoalChallenge } from "./challenge.config";
+import { challengeCatalog } from "./challenge.config";
 
-export const challengeEngine = new ChallengeEngine(reachGoalChallenge, {
+export const challengeEngine = new ChallengeEngine(challengeCatalog, {
   onTerminal: () => {
     const programOwnedRunner = programRuntime.stop();
 

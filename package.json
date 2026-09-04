@@ -11,7 +11,12 @@
     "verify:bumper": "node --experimental-strip-types scripts/verify-bumper-sensor.mjs",
     "verify:odometry": "node --experimental-strip-types scripts/verify-odometry.mjs",
     "verify:controls": "node --experimental-strip-types scripts/verify-control-ownership.mjs",
-    "verify:challenge": "node --experimental-strip-types scripts/verify-challenge.mjs"
+    "verify:challenge": "node --experimental-strip-types scripts/verify-challenge.mjs",
+    "verify:challenge-selection": "node --experimental-strip-types scripts/verify-challenge-selection.mjs",
+    "verify:challenge-progress": "node --experimental-strip-types scripts/verify-challenge-progress.mjs",
+    "verify:behaviors": "node --experimental-strip-types scripts/verify-behaviors.mjs",
+    "verify:manual-drive": "node --experimental-strip-types scripts/verify-manual-drive.mjs",
+    "verify:reach-target": "node --experimental-strip-types scripts/verify-reach-target-navigation.mjs"
   },
   "dependencies": {
     "@jitl/quickjs-singlefile-browser-release-sync": "^0.32.0",

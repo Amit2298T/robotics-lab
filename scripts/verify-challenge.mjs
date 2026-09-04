@@ -8,6 +8,10 @@ const definition = {
   id: "reach-goal-test",
   title: "Reach the Goal",
   description: "Test challenge",
+  difficulty: "beginner",
+  hint: "Test hint",
+  recommendedApis: ["forward"],
+  starThresholdsMs: { three: 25, two: 50, one: 100 },
   timeLimitMs: 100,
   targetZone: {
     position: [3.7, 0, -3.5],
@@ -52,7 +56,7 @@ class FakeScheduler {
 function createEngine() {
   const scheduler = new FakeScheduler();
   const terminalSnapshots = [];
-  const engine = new ChallengeEngine(definition, {
+  const engine = new ChallengeEngine([definition], {
     scheduler,
     onTerminal: (snapshot) => terminalSnapshots.push(snapshot),
   });
