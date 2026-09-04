@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProgramLanguage {
+  JAVASCRIPT
+}
+
+enum ChallengeAttemptStatus {
+  STARTED
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id                String              @id @default(cuid())
+  name              String
+  email             String              @unique
+  image             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  programs          Program[]
+  challengeProgress ChallengeProgress[]
+  challengeAttempts ChallengeAttempt[]
+}
+
+model Program {
+  id          String          @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  sourceCode  String
+  language    ProgramLanguage @default(JAVASCRIPT)
+  isPublic    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+}
+
+model ChallengeProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  challengeId     String
+  attempts        Int      @default(0)
+  completions     Int      @default(0)
+  bestTimeMs      Int?
+  bestScore       Int?
+  stars           Int      @default(0)
+  lastCompletedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@index([challengeId])
+}
+
+model ChallengeAttempt {
+  id            String                 @id @default(cuid())
+  userId        String
+  challengeId   String
+  runId         Int
+  status        ChallengeAttemptStatus
+  elapsedTimeMs Int?
+  score         Int?
+  stars         Int?
+  startedAt     DateTime
+  endedAt       DateTime?
+  createdAt     DateTime               @default(now())
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId, runId])
+  @@index([userId])
+  @@index([challengeId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
